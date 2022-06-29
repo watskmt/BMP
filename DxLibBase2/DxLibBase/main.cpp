@@ -25,7 +25,7 @@ typedef struct _BITMAPINFOHEADER {
 typedef struct _BITMAP {
 	_BITMAPFILEHEADER header;
 	_BITMAPINFOHEADER info;
-	char* pixData;
+	unsigned char* pixData;
 }_BITMAP;
 
 int ReadBmpFile(char* filename, _BITMAP* bmp)
@@ -34,6 +34,7 @@ int ReadBmpFile(char* filename, _BITMAP* bmp)
 	FILE* fp;
 	unsigned char header[14];
 	unsigned char info[40];
+	int infotop = 0x0e;
 
 	fopen_s(&fp, filename, "rb");
 	fread(header, 1, 14, fp);
@@ -48,19 +49,72 @@ int ReadBmpFile(char* filename, _BITMAP* bmp)
 		+ *(header + 12) * 0x10000
 		+ *(header + 13) * 0x1000000;
 
+	bmp->info.bcSize = *(info + 0x0e - infotop)
+		+ *(info + 0x0f - infotop) * 0x100
+		+ *(info + 0x10 - infotop) * 0x10000
+		+ *(info + 0x11 - infotop) * 0x1000000;
+
+	bmp->info.bcWidth = *(info + 0x12 - infotop)
+		+ *(info + 0x13 - infotop) * 0x100
+		+ *(info + 0x14 - infotop) * 0x10000
+		+ *(info + 0x15 - infotop) * 0x1000000;
+
+	bmp->info.bcHeight = *(info + 0x16 - infotop)
+		+ *(info + 0x17 - infotop) * 0x100
+		+ *(info + 0x18 - infotop) * 0x10000
+		+ *(info + 0x19 - infotop) * 0x1000000;
+
+	bmp->info.bcPlanes = *(info + 0x1a - infotop)
+		+ *(info + 0x1b - infotop) * 0x100;
+
+	bmp->info.bcBitCount = *(info + 0x1c - infotop)
+		+ *(info + 0x1d - infotop) * 0x100;
+
+	bmp->info.biCompression = *(info + 0x1e - infotop)
+		+ *(info + 0x1f - infotop) * 0x100
+		+ *(info + 0x20 - infotop) * 0x10000
+		+ *(info + 0x21 - infotop) * 0x1000000;
+	bmp->info.biSizeImage = *(info + 0x22 - infotop)
+		+ *(info + 0x23 - infotop) * 0x100
+		+ *(info + 0x24 - infotop) * 0x10000
+		+ *(info + 0x25 - infotop) * 0x1000000;
+	bmp->info.biXPixPerMeter = *(info + 0x26 - infotop)
+		+ *(info + 0x27 - infotop) * 0x100
+		+ *(info + 0x28 - infotop) * 0x10000
+		+ *(info + 0x29 - infotop) * 0x1000000;
+	bmp->info.biYPixPerMeter = *(info + 0x2a - infotop)
+		+ *(info + 0x2b - infotop) * 0x100
+		+ *(info + 0x2c - infotop) * 0x10000
+		+ *(info + 0x2d - infotop) * 0x1000000;
+	bmp->info.biClrUsed = *(info + 0x2e - infotop)
+		+ *(info + 0x2f - infotop) * 0x100
+		+ *(info + 0x30 - infotop) * 0x10000
+		+ *(info + 0x31 - infotop) * 0x1000000;
+	bmp->info.biClrImportant = *(info + 0x32 - infotop)
+		+ *(info + 0x33 - infotop) * 0x100
+		+ *(info + 0x34 - infotop) * 0x10000
+		+ *(info + 0x35 - infotop) * 0x1000000;
+
+	bmp->pixData = (unsigned char*)malloc(bmp->header.bfSize - sizeof(_BITMAPFILEHEADER) - sizeof(_BITMAPINFOHEADER));
+	fread(bmp->pixData, 1, bmp->header.bfSize - sizeof(_BITMAPFILEHEADER) - sizeof(_BITMAPINFOHEADER), fp);
+
 	return 0;
 }
 
 // プログラムは WinMain から始まります
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
-	int x;
+	int x, y;
 	int color = 0;
 
 	_BITMAP bmp1;
 
-	ReadBmpFile((char*)"c:\\temp\\red.bmp", &bmp1);
+	char filename[32] = "c:\\temp\\test1.bmp";
 
+	ReadBmpFile(filename, &bmp1);
+	//OutputDebugStringW(L"image size X : " + bmp1.info.bcWidth);
+	//OutputDebugStringW(L"image size Y : " + bmp1.info.bcHeight);
+	//OutputDebugStringW(L"datasize for a pixel :"+ bmp1.info.bcBitCount);
 
 	if (DxLib_Init() == -1)		// ＤＸライブラリ初期化処理
 	{
@@ -69,7 +123,23 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	ChangeWindowMode(TRUE);
 	SetGraphMode(800, 600, 32);
 
+	int width = bmp1.info.bcWidth;
+	int height = bmp1.info.bcHeight;
+	int count = 0;
 
+	for (int y = 0; y < bmp1.info.bcHeight; y++)
+	{
+		for (int x = 0; x < bmp1.info.bcWidth; x++)
+		{
+			color = GetColor(*(bmp1.pixData + count++)
+				, *(bmp1.pixData + count++)
+				, *(bmp1.pixData + count++));
+
+			DrawPixel(x, height -1 - y, color);
+		}
+		while(count % 4)
+			count++;
+	}
 	WaitKey();				// キー入力待ち
 
 	DxLib_End();				// ＤＸライブラリ使用の終了処理
