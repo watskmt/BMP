@@ -104,6 +104,7 @@ int ReadBmpFile(char* filename, _BITMAP* bmp)
 // プログラムは WinMain から始まります
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
+	int i;
 	int x, y;
 	int color = 0;
 
@@ -126,23 +127,49 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	int width = bmp1.info.bcWidth;
 	int height = bmp1.info.bcHeight;
 	int count = 0;
+	unsigned char** r = (unsigned char**)calloc(sizeof(unsigned char*), bmp1.info.bcHeight);
+	unsigned char** g = (unsigned char**)calloc(sizeof(unsigned char*), bmp1.info.bcHeight);
+	unsigned char** b = (unsigned char**)calloc(sizeof(unsigned char*), bmp1.info.bcHeight);
+	for (i = 0; i < bmp1.info.bcHeight; i++)
+	{
+		r[i] = (unsigned char*)calloc(sizeof(unsigned char), bmp1.info.bcWidth);
+		g[i] = (unsigned char*)calloc(sizeof(unsigned char), bmp1.info.bcWidth);
+		b[i] = (unsigned char*)calloc(sizeof(unsigned char), bmp1.info.bcWidth);
+	}
+
 
 	for (int y = 0; y < bmp1.info.bcHeight; y++)
 	{
 		for (int x = 0; x < bmp1.info.bcWidth; x++)
 		{
-			color = GetColor(*(bmp1.pixData + count++)
-				, *(bmp1.pixData + count++)
-				, *(bmp1.pixData + count++));
+			//color = GetColor(*(bmp1.pixData + count++)
+			//	, *(bmp1.pixData + count++)
+			//	, *(bmp1.pixData + count++));
 
-			DrawPixel(x, height -1 - y, color);
+			//DrawPixel(x, height -1 - y, color);
+			b[height - 1 - y][x] = *(bmp1.pixData + count++);
+			g[height - 1 - y][x] = *(bmp1.pixData + count++);
+			r[height - 1 - y][x] = *(bmp1.pixData + count++);
+
 		}
 		while(count % 4)
 			count++;
 	}
-	WaitKey();				// キー入力待ち
+	for (int y = 0; y < bmp1.info.bcHeight; y++)
+	{
+		for (int x = 0; x < bmp1.info.bcWidth; x++)
+		{
+			DrawPixel(x, y, GetColor(r[y][x], g[y][x], b[y][x]));
+		}
+	}
+			WaitKey();				// キー入力待ち
 
 	DxLib_End();				// ＤＸライブラリ使用の終了処理
-
+	
+	for (i = 0; i < bmp1.info.bcHeight; i++)
+	{
+		free(r[i]); free(g[i]); free(b[i]);
+	}
+	free(r); free(g); free(b);
 	return 0;				// ソフトの終了 
 }
