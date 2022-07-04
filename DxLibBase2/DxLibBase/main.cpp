@@ -1,4 +1,4 @@
-#include "DxLib.h"
+ï»¿#include "DxLib.h"
 
 typedef struct _BITMAPFILEHEADER {
 	unsigned short int bfType;
@@ -101,7 +101,6 @@ int ReadBmpFile(char* filename, _BITMAP* bmp)
 	return 0;
 }
 
-// ƒvƒƒOƒ‰ƒ€‚Í WinMain ‚©‚çn‚Ü‚è‚Ü‚·
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
 	int i;
@@ -113,19 +112,20 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	char filename[32] = "c:\\temp\\test1.bmp";
 
 	ReadBmpFile(filename, &bmp1);
-	//OutputDebugStringW(L"image size X : " + bmp1.info.bcWidth);
-	//OutputDebugStringW(L"image size Y : " + bmp1.info.bcHeight);
-	//OutputDebugStringW(L"datasize for a pixel :"+ bmp1.info.bcBitCount);
 
-	if (DxLib_Init() == -1)		// ‚c‚wƒ‰ƒCƒuƒ‰ƒŠ‰Šú‰»ˆ—
+	if (DxLib_Init() == -1)
 	{
-		return -1;			// ƒGƒ‰[‚ª‹N‚«‚½‚ç’¼‚¿‚ÉI—¹
+		return -1;
 	}
 	ChangeWindowMode(TRUE);
-	SetGraphMode(800, 600, 32);
 
 	int width = bmp1.info.bcWidth;
 	int height = bmp1.info.bcHeight;
+
+	SetGraphMode(width, height, 32);
+	SetMouseDispFlag(TRUE);
+
+	int mouseX, mouseY;
 	int count = 0;
 	unsigned char** r = (unsigned char**)calloc(sizeof(unsigned char*), bmp1.info.bcHeight);
 	unsigned char** g = (unsigned char**)calloc(sizeof(unsigned char*), bmp1.info.bcHeight);
@@ -152,7 +152,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			r[height - 1 - y][x] = *(bmp1.pixData + count++);
 
 		}
-		while(count % 4)
+		while (count % 4)
 			count++;
 	}
 	for (int y = 0; y < bmp1.info.bcHeight; y++)
@@ -162,14 +162,24 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			DrawPixel(x, y, GetColor(r[y][x], g[y][x], b[y][x]));
 		}
 	}
-			WaitKey();				// ƒL[“ü—Í‘Ò‚¿
+		// ã‚­ãƒ¼ãŒæŠ¼ã•ã‚Œã‚‹ã¾ã§ãƒ«ãƒ¼ãƒ—
+	while (CheckHitKey(KEY_INPUT_ESCAPE) == 0)
+	{
+		// ãƒã‚¦ã‚¹ã®ä½ç½®ã‚’å–å¾—
+		GetMousePoint(&mouseX, &mouseY);
+		if (GetMouseInput() == MOUSE_INPUT_LEFT)
+		{
+			DrawPixel(mouseX, mouseY, GetColor(0, 0, 0));
+		}
+	}
+	WaitKey();				// 
 
-	DxLib_End();				// ‚c‚wƒ‰ƒCƒuƒ‰ƒŠg—p‚ÌI—¹ˆ—
-	
+	DxLib_End();				// 
+
 	for (i = 0; i < bmp1.info.bcHeight; i++)
 	{
 		free(r[i]); free(g[i]); free(b[i]);
 	}
 	free(r); free(g); free(b);
-	return 0;				// ƒ\ƒtƒg‚ÌI—¹ 
+	return 0;				//  
 }
