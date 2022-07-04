@@ -126,6 +126,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	SetMouseDispFlag(TRUE);
 
 	int mouseX, mouseY;
+	int radius = 1;
 	int count = 0;
 	unsigned char** r = (unsigned char**)calloc(sizeof(unsigned char*), bmp1.info.bcHeight);
 	unsigned char** g = (unsigned char**)calloc(sizeof(unsigned char*), bmp1.info.bcHeight);
@@ -162,16 +163,46 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			DrawPixel(x, y, GetColor(r[y][x], g[y][x], b[y][x]));
 		}
 	}
-		// キーが押されるまでループ
-	while (CheckHitKey(KEY_INPUT_ESCAPE) == 0)
+
+	GetMouseWheelRotVol();
+
+	// キーが押されるまでループ
+	while (CheckHitKey(KEY_INPUT_ESCAPE) == 0 && CheckHitKey(KEY_INPUT_W) == 0)
 	{
 		// マウスの位置を取得
 		GetMousePoint(&mouseX, &mouseY);
+		radius += GetMouseWheelRotVol();
 		if (GetMouseInput() == MOUSE_INPUT_LEFT)
 		{
-			DrawPixel(mouseX, mouseY, GetColor(0, 0, 0));
+			DrawCircle(mouseX, mouseY, radius, GetColor(0, 0, 0), 1);
 		}
 	}
+
+	SaveDrawScreenToBMP(0, 0, width-1, height-1, TEXT("newBMP.bmp"));
+
+	//count = 0;
+	//for (int y = bmp1.info.bcHeight-1; y >= 0; y--)
+	//{
+	//	for (int x = 0; x < bmp1.info.bcWidth; x++)
+	//	{
+	//		color = GetPixel(x, y);
+	//		*(bmp1.pixData + count++) = color & 0xff;
+	//		*(bmp1.pixData + count++) = color / 0x100 & 0xff;
+	//		*(bmp1.pixData + count++) = color / 0x10000 & 0xff;
+	//	}
+	//	while (count % 4)
+	//		count++;
+	//}
+	//WaitKey();
+	//for (int y = 0; y < bmp1.info.bcHeight; y++)
+	//{
+	//	for (int x = 0; x < bmp1.info.bcWidth; x++)
+	//	{
+	//		DrawPixel(x, y, GetColor(r[y][x], g[y][x], b[y][x]));
+	//	}
+	//}
+
+
 	WaitKey();				// 
 
 	DxLib_End();				// 
